@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LingoTrack | Vault</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Ana Sayfa İle Senkronize Renk Paleti */
+        :root {
+            --slate-950: #020617; 
+            --slate-900: #0f172a; 
+            --slate-800: #1e293b;
+            --slate-700: #334155;
+            --cyan-400: #22d3ee; 
+            --white: #f8fafc;
+            --red-500: #ef4444;
+            --red-400: #f87171;
+        }
+
+        /* Modern Font ve Göz Yormayan Ayarlar */
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+        }
+        
+        body { 
+            background-color: var(--slate-950); 
+            color: var(--white); 
+            display: flex; 
+            min-height: 100vh; 
+        }
+        
+        /* SIDEBAR (Ana sayfa ile birebir aynı) */
+        #sidebar { 
+            width: 260px; 
+            background: var(--slate-900); 
+            position: fixed; 
+            height: 100vh; 
+            border-right: 1px solid var(--slate-800); 
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            overflow: hidden; 
+            z-index: 1000; 
+        }
+        #sidebar.collapsed { width: 70px; }
+        .sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 20px; }
+        .logo { font-size: 1.5rem; font-weight: 800; color: var(--cyan-400); }
+        #sidebar.collapsed .logo { display: none; }
+        
+        /* Şık Toggle Butonu */
+        #toggleBtn { 
+            background: var(--slate-800); 
+            border: 1px solid var(--slate-700); 
+            color: var(--cyan-400); 
+            cursor: pointer; 
+            font-size: 1.1rem; 
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s ease;
+        }
+        #toggleBtn:hover { background: var(--slate-700); transform: scale(1.05); color: var(--white); }
+
+        nav { padding: 10px; }
+        nav a { 
+            display: flex; align-items: center; padding: 12px 15px; color: #94a3b8; 
+            text-decoration: none; border-radius: 8px; margin-bottom: 5px; transition: 0.3s;
+        }
+        nav a:hover, nav a.active { background: var(--slate-800); color: var(--cyan-400); font-weight: 500; }
+        nav a i { min-width: 40px; font-size: 1.2rem; }
+        #sidebar.collapsed span { display: none; }
+
+        /* MAIN VE TABLO TASARIMI */
+        main { flex: 1; margin-left: 260px; padding: 40px; transition: 0.4s; overflow-x: hidden; }
+        main.expanded { margin-left: 70px; }
+
+        .vault-table-container { 
+            background: var(--slate-900); 
+            border-radius: 16px; 
+            overflow-x: auto; 
+            padding: 20px; 
+            border: 1px solid var(--slate-800);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { 
+            text-align: left; 
+            color: var(--cyan-400); 
+            padding: 15px; 
+            border-bottom: 2px solid var(--slate-800); 
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        td { 
+            padding: 18px 15px; 
+            vertical-align: top; 
+            border-bottom: 1px solid rgba(255,255,255,0.03); 
+            font-size: 0.95rem; 
+            line-height: 1.6; 
+            color: #e2e8f0;
+        }
+        
+        /* Güçlü Vurgular (Tech Lead Bonus) */
+        strong { color: var(--white); font-weight: 600; }
+        .scene-text { font-style: italic; color: #94a3b8; margin-top: 8px; display: block; }
+        .date-badge { background: var(--slate-800); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; color: var(--cyan-400); }
+
+        .delete-btn { 
+            color: var(--red-500); 
+            background: rgba(239, 68, 68, 0.1); 
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            width: 36px; height: 36px; border-radius: 8px;
+            cursor: pointer; transition: 0.3s; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        .delete-btn:hover { background: var(--red-500); color: var(--white); transform: scale(1.1); }
+        
+        .signature { position: fixed; bottom: 12px; right: 24px; font-size: 0.75rem; color: rgba(255, 255, 255, 0.15); pointer-events: none; text-transform: uppercase; font-weight: 600; letter-spacing: 1px; }
+
+        @media (max-width: 768px) { 
+            main { margin-left: 0; padding: 15px; width: 100vw; } 
+            #sidebar { width: 70px; transform: translateX(-100%); } /* Mobilde tamamen gizle */
+            #sidebar.mobile-open { transform: translateX(0); width: 260px; }
+            .vault-table-container { padding: 10px; border-radius: 12px; }
+            td, th { padding: 12px 10px; font-size: 0.85rem; }
+            /* Mobil menü açma butonu (Opsiyonel ama kullanışlı) */
+            .mobile-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+            .mobile-header button { background: none; border: none; color: var(--cyan-400); font-size: 1.5rem; }
+        }
+        @media (min-width: 769px) { .mobile-header { display: none; } }
+    </style>
+</head>
+<body>
+    <aside id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">LingoTrack</div>
+            <button id="toggleBtn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+        </div>
+        <nav>
+            <a href="index.html"><i class="fa-solid fa-house"></i> <span>Home</span></a>
+            <a href="vault.html" class="active"><i class="fa-solid fa-vault"></i> <span>Vault</span></a>
+            <a href="analysis.html"><i class="fa-solid fa-tv"></i> <span>Friends Room</span></a>
+        </nav>
+    </aside>
+
+    <main>
+        <div class="mobile-header">
+            <h2 style="color: var(--cyan-400);">Vault</h2>
+            <button onclick="document.getElementById('sidebar').classList.toggle('mobile-open')">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+
+        <div class="vault-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Date & Scene</th>
+                        <th style="width: 25%;">Vocabulary</th>
+                        <th style="width: 28%;">Grammar</th>
+                        <th style="width: 27%;">Context</th>
+                        <th style="width: 5%; text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="vaultBody"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const main = document.querySelector('main');
+            sidebar.classList.toggle('collapsed');
+            if(main) main.classList.toggle('expanded');
+            localStorage.setItem('sidebarStatus', sidebar.classList.contains('collapsed') ? 'closed' : 'open');
+        }
+
+        // Metni güzelleştiren fonksiyon (Yıldızları bold yapar, satırları düzenler)
+        function formatText(text) {
+            if(!text) return "";
+            // **kalın** yazıları <strong> etiketine çevirir
+            let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // Yeni satırları ve madde işaretlerini (* ) düzenler
+            formatted = formatted.replace(/\n\*/g, '<br>•').replace(/\n/g, '<br>');
+            return formatted;
+        }
+
+        function loadVault() {
+            const vaultBody = document.getElementById('vaultBody');
+            const history = JSON.parse(localStorage.getItem('lt_history') || "[]");
+            
+            if (history.length === 0) {
+                vaultBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; color: #64748b;">Hazine henüz boş. Friends Room'a gidip bir şeyler analiz et!</td></tr>`;
+                return;
+            }
+
+            vaultBody.innerHTML = history.map((item, index) => `
+                <tr>
+                    <td>
+                        <span class="date-badge">${item.date}</span>
+                        <span class="scene-text">"${item.scene}"</span>
+                    </td>
+                    <td>${formatText(item.vocab)}</td>
+                    <td>${formatText(item.grammar)}</td>
+                    <td>${formatText(item.context)}</td>
+                    <td style="text-align: center;">
+                        <button class="delete-btn" title="Kayıttan Sil" onclick="deleteItem(${index})">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteItem(index) {
+            if(confirm("Dostum bu kaydı kalıcı olarak silmek istediğine emin misin?")) {
+                let history = JSON.parse(localStorage.getItem('lt_history') || "[]");
+                history.splice(index, 1);
+                localStorage.setItem('lt_history', JSON.stringify(history));
+                loadVault();
+            }
+        }
+
+        window.onload = () => {
+            loadVault();
+            if(localStorage.getItem('sidebarStatus') === 'closed') toggleSidebar();
+            const sig = document.createElement('div');
+            sig.className = 'signature'; sig.innerText = 'DESIGNED BY ECY';
+            document.body.appendChild(sig);
+        };
+    </script>
+</body>
+</html>

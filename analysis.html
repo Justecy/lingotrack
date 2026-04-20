@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LingoTrack | Analysis Room</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ANA SAYFA İLE BİREBİR AYNI RENK VE FONT PALETİ */
+        :root { 
+            --slate-950: #020617; 
+            --slate-900: #0f172a; 
+            --slate-800: #1e293b; 
+            --slate-700: #334155;
+            --cyan-400: #22d3ee; 
+            --cyan-500: #06b6d4;
+            --indigo-500: #6366f1;
+            --indigo-600: #4f46e5;
+            --white: #f8fafc; 
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+        }
+        
+        body { background-color: var(--slate-950); color: var(--white); display: flex; min-height: 100vh; }
+        
+        /* SIDEBAR */
+        #sidebar { width: 260px; height: 100vh; background: var(--slate-900); position: fixed; border-right: 1px solid var(--slate-800); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; z-index: 1000; }
+        #sidebar.collapsed { width: 70px; }
+        .sidebar-header { display: flex; align-items: center; justify-content: space-between; padding: 20px; }
+        .logo { font-size: 1.5rem; color: var(--cyan-400); font-weight: 800; }
+        #sidebar.collapsed .logo { display: none; }
+        
+        /* Premium Toggle Butonu */
+        #toggleBtn { 
+            background: var(--slate-800); 
+            border: 1px solid var(--slate-700); 
+            color: var(--cyan-400); 
+            cursor: pointer; 
+            font-size: 1.1rem; 
+            width: 36px; height: 36px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; transition: 0.3s ease;
+        }
+        #toggleBtn:hover { background: var(--slate-700); transform: scale(1.05); color: var(--white); }
+
+        nav { padding: 10px; }
+        nav a { display: flex; align-items: center; padding: 12px 15px; color: #94a3b8; text-decoration: none; border-radius: 8px; transition: 0.3s; margin-bottom: 5px; }
+        nav a:hover, nav a.active { background: var(--slate-800); color: var(--cyan-400); font-weight: 500; }
+        nav a i { min-width: 40px; font-size: 1.2rem; }
+        #sidebar.collapsed span { display: none; }
+        
+        main { flex: 1; margin-left: 260px; padding: 40px; transition: 0.4s; display: flex; justify-content: center; }
+        main.expanded { margin-left: 70px; }
+
+        /* ANALYSIS LAB TASARIMI */
+        .lab-container { 
+            max-width: 1000px; width: 100%; 
+            background: var(--slate-900); 
+            padding: 40px; border-radius: 20px; 
+            border: 1px solid var(--slate-800);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+        .lab-container h2 { color: var(--cyan-400); margin-bottom: 20px; font-size: 1.8rem; letter-spacing: -0.5px; }
+        
+        input, textarea { 
+            width: 100%; background: var(--slate-950); 
+            border: 1px solid var(--slate-700); color: var(--white); 
+            padding: 18px; border-radius: 12px; margin-bottom: 20px; 
+            font-size: 1rem; transition: all 0.3s; outline: none;
+            resize: vertical;
+        }
+        input:focus, textarea:focus { border-color: var(--cyan-400); box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1); }
+        
+        /* Premium Butonlar */
+        .btn-group { display: flex; gap: 15px; margin-bottom: 10px; }
+        button.action-btn { 
+            flex: 1; padding: 16px; border-radius: 12px; 
+            cursor: pointer; border: none; font-weight: 600; font-size: 1rem; 
+            transition: all 0.3s; display: flex; justify-content: center; align-items: center; gap: 10px;
+        }
+        .btn-ai { background: var(--indigo-500); color: white; }
+        .btn-ai:hover:not(:disabled) { background: var(--indigo-600); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4); }
+        .btn-ai:disabled { background: var(--slate-700); color: #94a3b8; cursor: not-allowed; }
+        
+        .btn-save { background: var(--slate-800); color: var(--cyan-400); border: 1px solid var(--slate-700); }
+        .btn-save:hover { background: var(--slate-700); color: var(--cyan-500); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+        /* Sonuç Kutuları */
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 35px; }
+        .res-box { background: var(--slate-950); padding: 25px; border-radius: 16px; border: 1px solid var(--slate-800); transition: 0.3s; }
+        .res-box:hover { border-color: var(--slate-700); }
+        .res-box h3 { color: var(--cyan-400); margin-bottom: 15px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; }
+        .res-box textarea { border: none; padding: 0; margin: 0; background: transparent; font-size: 0.95rem; line-height: 1.6; color: #e2e8f0; }
+        .res-box textarea:focus { box-shadow: none; }
+
+        .signature { position: fixed; bottom: 12px; right: 24px; font-size: 0.75rem; color: rgba(255, 255, 255, 0.15); pointer-events: none; text-transform: uppercase; font-weight: 600; letter-spacing: 1px; }
+
+        @media (max-width: 768px) { 
+            main { margin-left: 0; padding: 15px; } 
+            #sidebar { transform: translateX(-100%); } 
+            .lab-container { padding: 20px; }
+            .btn-group { flex-direction: column; }
+            .results-grid { grid-template-columns: 1fr; } 
+        }
+    </style>
+</head>
+<body>
+    <aside id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">LingoTrack</div>
+            <button id="toggleBtn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+        </div>
+        <nav>
+            <a href="index.html"><i class="fa-solid fa-house"></i> <span>Home</span></a>
+            <a href="vault.html"><i class="fa-solid fa-vault"></i> <span>Vault</span></a>
+            <a href="analysis.html" class="active"><i class="fa-solid fa-tv"></i> <span>Friends Room</span></a>
+        </nav>
+    </aside>
+
+    <main>
+        <div class="lab-container">
+            <h2><i class="fa-solid fa-microchip"></i> AI Analysis Lab</h2>
+            
+            <input type="password" id="apiKey" placeholder="Gemini API Key is safe now...">
+            <textarea id="sceneInput" placeholder="Paste the Friends dialogue here..." rows="4"></textarea>
+            
+            <div class="btn-group">
+                <button id="aiBtn" class="action-btn btn-ai" onclick="runAnalysis()">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Analyze
+                </button>
+                <button class="action-btn btn-save" onclick="saveToHistory()">
+                    <i class="fa-solid fa-floppy-disk"></i> Save to Vault
+                </button>
+            </div>
+
+            <div class="results-grid">
+                <div class="res-box">
+                    <h3><i class="fa-solid fa-book-open"></i> Vocabulary</h3>
+                    <textarea id="vOut" rows="7" readonly placeholder="Waiting for analysis..."></textarea>
+                </div>
+                <div class="res-box">
+                    <h3><i class="fa-solid fa-pen-nib"></i> Grammar</h3>
+                    <textarea id="gOut" rows="7" readonly placeholder="Waiting for analysis..."></textarea>
+                </div>
+                <div class="res-box">
+                    <h3><i class="fa-solid fa-masks-theater"></i> Context</h3>
+                    <textarea id="cOut" rows="7" readonly placeholder="Waiting for analysis..."></textarea>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // SIDEBAR TOGGLE
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const main = document.querySelector('main');
+            sidebar.classList.toggle('collapsed');
+            if(main) main.classList.toggle('expanded');
+            localStorage.setItem('sidebarStatus', sidebar.classList.contains('collapsed') ? 'closed' : 'open');
+        }
+
+        // AUTO-LOAD KEY & SIGNATURE
+        window.onload = () => {
+            const savedKey = localStorage.getItem('lt_api_key');
+            if (savedKey) document.getElementById('apiKey').value = savedKey;
+            if (localStorage.getItem('sidebarStatus') === 'closed') toggleSidebar();
+            
+            const sig = document.createElement('div');
+            sig.className = 'signature'; sig.innerText = 'DESIGNED BY ECY';
+            document.body.appendChild(sig);
+        };
+
+        // RUN ANALYSIS (Eski güçlü ve detaylı komut geri döndü!)
+        async function runAnalysis() {
+            const key = document.getElementById('apiKey').value.trim();
+            const scene = document.getElementById('sceneInput').value.trim();
+            const btn = document.getElementById('aiBtn');
+
+            if (!key || !scene) return alert("Dostum, eksik bilgi var! Anahtarı ve metni kontrol et.");
+            
+            btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Processing..."; 
+            btn.disabled = true;
+
+            try {
+                // MODEL KEŞFİ
+                const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`;
+                const listRes = await fetch(listUrl);
+                const listData = await listRes.json();
+                
+                if(listData.error) throw new Error(listData.error.message);
+
+                const activeModel = listData.models.find(m => m.supportedGenerationMethods.includes("generateContent") && m.name.includes("gemini"));
+                if(!activeModel) throw new Error("Uygun model bulunamadı.");
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/${activeModel.name}:generateContent?key=${key}`;
+                
+                // ESKİ GÜÇLÜ KOMUT (FORMATIN BOZULMAMASI İÇİN ŞART)
+                const aiPrompt = `Sen bir 'English Language Coach' ve sıkı bir Friends hayranısın. 
+A2 seviyesindeki öğrencine bir dost gibi (hitap: 'Dostum') samimi, dobra ve açıklayıcı bilgiler veriyorsun.
+
+Şu repliği analiz et: "${scene}"
+
+Yanıtını MUTLAKA şu formatta ve şu içerik düzeninde ver:
+
+[VOCAB]
+* Kelime/Deyim: Türkçe karşılığı (Kısa bir kullanım örneği veya dobra bir ipucu).
+
+[GRAMMAR]
+* Gramer Başlığı: (Dostum, burada olay şu... diyerek konuyu basitçe, madde madde olmadan anlat).
+
+[CONTEXT]
+* Sahne Analizi: (Karakterin ne hissettiğini, neden böyle dediğini ve Friends evrenindeki önemini dostane bir dille açıkla).
+
+ÖNEMLİ: Yanıtını sadece bu 3 başlık altında ver, fazladan giriş/çıkış cümlesi kurma.`;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: aiPrompt }] }]
+                    })
+                });
+
+                const data = await response.json();
+                if(data.error) throw new Error(data.error.message);
+
+                let text = data.candidates[0].content.parts[0].text;
+                
+                // YILDIZ KATİLİ
+                text = text.replace(/\*\*/g, '');
+
+                // METNİ PARÇALAMA
+                const parts = text.split(/\[VOCAB\]|\[GRAMMAR\]|\[CONTEXT\]/i);
+                
+                document.getElementById('vOut').value = parts[1] ? parts[1].trim() : "Kelime bulunamadı. Lütfen tekrar dene.";
+                document.getElementById('gOut').value = parts[2] ? parts[2].trim() : "Gramer bulunamadı. Lütfen tekrar dene.";
+                document.getElementById('cOut').value = parts[3] ? parts[3].trim() : "Bağlam bulunamadı. Lütfen tekrar dene.";
+                
+                localStorage.setItem('lt_api_key', key);
+                btn.innerHTML = "<i class='fa-solid fa-check'></i> Success! ✨";
+            } catch (err) {
+                alert("Hata: " + err.message);
+                btn.innerHTML = "<i class='fa-solid fa-wand-magic-sparkles'></i> AI Analyze";
+            } finally {
+                setTimeout(() => { 
+                    btn.disabled = false; 
+                    btn.innerHTML = "<i class='fa-solid fa-wand-magic-sparkles'></i> AI Analyze"; 
+                }, 2000);
+            }
+        }
+
+        // SAVE TO VAULT
+        function saveToHistory() {
+            const v = document.getElementById('vOut').value;
+            if(!v || v === "Waiting for analysis...") return alert("Önce analizi tamamlamalısın dostum!");
+            
+            const newRecord = {
+                scene: document.getElementById('sceneInput').value,
+                vocab: v, 
+                grammar: document.getElementById('gOut').value,
+                context: document.getElementById('cOut').value, 
+                date: new Date().toLocaleDateString()
+            };
+            
+            let history = JSON.parse(localStorage.getItem('lt_history') || "[]");
+            history.unshift(newRecord);
+            localStorage.setItem('lt_history', JSON.stringify(history));
+            
+            const saveBtn = document.querySelector('.btn-save');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = "<i class='fa-solid fa-check-double'></i> Saved!";
+            saveBtn.style.color = "var(--white)";
+            saveBtn.style.background = "var(--cyan-500)";
+            
+            setTimeout(() => {
+                saveBtn.innerHTML = originalText;
+                saveBtn.style.color = "";
+                saveBtn.style.background = "";
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
